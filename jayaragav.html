@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shopping Receipt To-Do List</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    body {
+      background: #eef2f3;
+      padding: 20px;
+    }
+    .container {
+      max-width: 650px;
+      background: #fff;
+      margin: auto;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 5px;
+    }
+    .datetime, .location {
+      text-align: center;
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: #555;
+    }
+    .form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .form input[type="text"],
+    .form input[type="number"] {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    .form button {
+      padding: 10px;
+      background: #28a745;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .form button:hover {
+      background: #218838;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+    li {
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #f9f9f9;
+      border-left: 5px solid red;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .verified {
+      border-left-color: green;
+    }
+    .task-info {
+      flex: 1;
+    }
+    .task-info span {
+      display: block;
+    }
+    .price {
+      color: #333;
+      font-weight: bold;
+    }
+    .btns {
+      display: flex;
+      gap: 5px;
+    }
+    .btns button {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .verify-btn {
+      background: #17a2b8;
+      color: white;
+    }
+    .delete-btn {
+      background: #dc3545;
+      color: white;
+    }
+    .total-box {
+      margin-top: 20px;
+      text-align: right;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .status-icon {
+      font-size: 18px;
+      margin-right: 6px;
+    }
+    .green {
+      color: green;
+    }
+    .red {
+      color: red;
+    }
+    .download-btn {
+      margin-top: 20px;
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .download-btn:hover {
+      background-color: #0069d9;
+    }
+    #receipt {
+      padding: 15px;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container" id="receipt">
+  <h2>🛒 Home Appliance Shopping List</h2>
+  <div class="location">📍 Place: <span id="place">Chennai, India</span></div>
+  <div class="datetime" id="datetime">🕒 Date & Time: </div>
+
+  <div class="form">
+    <input type="text" id="taskInput" placeholder="Add appliance name (e.g. Washing Machine)">
+    <input type="number" id="priceInput" placeholder="Enter Price (₹)" min="0">
+    <button onclick="addTask()">Add Appliance</button>
+  </div>
+
+  <ul id="taskList"></ul>
+
+  <div class="total-box">
+    ✅ Total Verified Price: ₹<span id="totalVerified">0</span>
+  </div>
+</div>
+
+<button class="download-btn" onclick="downloadReceipt()">📥 Download Bill (Image)</button>
+
+<script>
+  let tasks = [];
+
+  function addTask() {
+    const name = document.getElementById('taskInput').value.trim();
+    const price = parseFloat(document.getElementById('priceInput').value);
+
+    if (!name || isNaN(price)) {
+      alert("Please enter both appliance name and valid price.");
+      return;
+    }
+
+    const task = {
+      name,
+      price,
+      verified: false
+    };
+
+    tasks.push(task);
+    document.getElementById('taskInput').value = "";
+    document.getElementById('priceInput').value = "";
+    renderTasks();
+  }
+
+  function toggleVerify(index) {
+    tasks[index].verified = !tasks[index].verified;
+    renderTasks();
+  }
+
+  function deleteTask(index) {
+    tasks.splice(index, 1);
+    renderTasks();
+  }
+
+  function renderTasks() {
+    const list = document.getElementById('taskList');
+    const totalDisplay = document.getElementById('totalVerified');
+    list.innerHTML = "";
+    let total = 0;
+
+    tasks.forEach((task, index) => {
+      const li = document.createElement('li');
+      li.className = task.verified ? 'verified' : '';
+
+      const statusIcon = task.verified
+        ? '<span class="status-icon green">✔️</span>'
+        : '<span class="status-icon red">❌</span>';
+
+      li.innerHTML = `
+        <div class="task-info">
+          ${statusIcon}<span>${task.name}</span>
+          <span class="price">₹${task.price}</span>
+        </div>
+        <div class="btns">
+          <button class="verify-btn" onclick="toggleVerify(${index})">✔</button>
+          <button class="delete-btn" onclick="deleteTask(${index})">✖</button>
+        </div>
+      `;
+
+      list.appendChild(li);
+
+      if (task.verified) total += task.price;
+    });
+
+    totalDisplay.textContent = total.toFixed(2);
+  }
+
+  function updateDateTime() {
+    const dt = new Date();
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const formatted = `${dt.getDate()}-${months[dt.getMonth()]}-${dt.getFullYear()} ${dt.toLocaleTimeString()}`;
+    document.getElementById('datetime').innerHTML = `🕒 Date & Time: ${formatted}`;
+  }
+
+  setInterval(updateDateTime, 1000);
+  updateDateTime();
+
+  function downloadReceipt() {
+    html2canvas(document.getElementById('receipt')).then(canvas => {
+      const link = document.createElement('a');
+      link.download = 'shopping-bill.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    });
+  }
+</script>
+
+</body>
+</html>
